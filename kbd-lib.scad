@@ -43,6 +43,11 @@ mx_latch_offset = 2.75; //Distance from center of side of housing to start of to
 mx_latch_width = 3.45;
 DSA_cap_top_width = 12;
 
+diode_pin_spacing = 7.62;
+diode_y_offset = -2.5;
+diode_pinhole_diameter = 0.8; //Should be 0.644 (22 AWG), but laser cutter at Fuse can't make reliable hole that small in 1/16" acrylic.
+diode_pinholes = false;
+
 common_frame_thickness = 3; //Arbitrary. Compromise between frame flex and cost and time (3D printing time, or injection molding cooling time) of production. FIXME: 2 might be adequate.
 extended_frame_thickness = mx_frame_to_pin; //Used only for test 3D prints of keywell and thumbplate; not used in production. Extends keyhole sides enough to accomodate full keyswitch, so that 3D printing vertical support material under it doesn't interfere with keyswitch for keyswitches that aren't vertical.
 support_material_thickness = infin; //Used for 3D printing support structure to avoid steep overhangs.
@@ -94,12 +99,15 @@ thumb_yaw = 12;
 thumbplate_z_offset = z_height(index_finger_home_column);
 parallel_thumb_key_qnty = 3; //Number of parallel double-length thumb keys
 render_thumb_pinch_key = true; //Whether to create thumb pinch key
-thumb_pinch_key_hack = 0; //Hack to avoid interference from main keywell for thumb pinch key when using extended frame for 3D printing
+thumb_pinch_key_y_hack = 3; //Hack to avoid interference from main keywell for thumb pinch key when using extended frame for 3D printing. Also when using 3/2 length keycap (oriented along y axis) instead of square keycap.
+thumb_pinch_key_x_hack = 0;
 thumb_x_hack = 2; //Hack to eliminate a little superfluous x-axis spacing of thumb plate, because I'm tired of doing the trig
 first_secondary_thumb_key = 2; //Number of first thumb key that counts as secondary (space key is zero)
 match_roll_secondary_thumb_keys = true; //Option to roll secondaries the same as primaries
 add_yaw_secondary_thumb_keys = 3; //Additional yaw for each thumb key relative to the previous one
 raise_secondary_thumb_keys = true; //Raise secondary thumb keys above z-height of thumb plane
+top_thumb_key_y_offset = 5; //Clearance to use 3/2 length keycap (oriented along y axis of thumb plate) instead of square keycap.
+
 middle_finger_y_bottom = //Almost the same as for thumbplate
      (keysize+key_y_spacing)*(-1/2 - cos(x_pitch) - cos(2*x_pitch));
 
@@ -124,6 +132,8 @@ keyswitch_y = mx_keyswitch_x_y;
 keyhole_x = mx_keyhole_x_y;
 keyhole_y = mx_keyhole_x_y;
 mx_latches = true;
+
+keyswitch_y_midlayer_adjust = keyhole_y - 14; // Hack to keep diode pinholes aligned when using mid layer with keyswitch_x_y set to something other than 14
 
 palmrest_y_bottom =
      -total_palmrest_y_height*cos(palm_pitch) //Height in x-y plane of palmrest itself
@@ -171,6 +181,11 @@ module keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, k
 	  if(two_D==false) cube([keyswitch_x, keyswitch_y, (common_frame_thickness+(mx_frame_to_pin-(keyswitch_x-keyhole_x)/2)-keyswitch_frame_thickness)+BS]); //Restrict frame thickness to keyswitch spec in area of keyswitch, so keyswitch can latch into place using frame latches on bottom of housing when inserted into hole. (This is unrelated to the top-housing latches that mx_latch_offset, mx_latch_width, and mx_latches provide clearance for.)
      translate([(keyswitch_x-keyhole_x)/2, (keyswitch_y-keyhole_y)/2, -BS]) {
 	  cube([keyhole_x, keyhole_y, common_frame_thickness+mx_frame_to_pin+3*BS]); //Punch square hole through entire frame
+      if(diode_pinholes) {
+        for(i=[-1,1])
+          translate([keyhole_x/2 + i*diode_pin_spacing/2, diode_y_offset+keyswitch_y_midlayer_adjust/2, 0])
+            cylinder(h=common_frame_thickness+mx_frame_to_pin+3*BS, r=diode_pinhole_diameter/2);
+      }
 	  if(avoid_interfering_supports||enable_injection_moldability)
 	       translate([keyhole_x/2, keyhole_y/2, keyswitch_frame_thickness+2*BS])
 		    rotate(45) cylinder(h=(keyswitch_x-keyhole_x)/2+BS,
@@ -406,6 +421,7 @@ module thumbplate(cutout_only=false) {
      translate([-1/2*keysize-3/2*keysize*cos(y_roll[0]) //Primary x positioning relative to keywell
 		-mx_frame_to_pin*2*sin((-thumb_roll+y_roll[0])/2)/thumb_x_hack, //x offset to avoid interference caused by roll
 		-(keysize)*(1/2+cos(x_pitch)+1/2*cos(2*x_pitch)) //Primary y positioning
+		+y_translation[index_finger_home_column]
 		-key_y_spacing
 		-1/2*keysize //y offset to account for double-length thumb key caps, with mount in middle of cap
 		-(keysize/2*sin(thumb_yaw)) //y offset to avoid intereference caused by yaw.
@@ -422,16 +438,16 @@ module thumbplate(cutout_only=false) {
 					  x*add_yaw_secondary_thumb_keys])
 			      keyframe(cutout_only=cutout_only, ysize=conserve_plastic?1:2); //These are for the three vertical (along y-axis) double-length thumb keys
 		    }
-		    translate([-keysize+keysize*sin(thumb_yaw), keysize*3/2+mx_frame_to_plunger_top*sin(x_pitch), key_travel_distance])
+		    translate([-keysize+keysize*sin(thumb_yaw), keysize*3/2+mx_frame_to_plunger_top*sin(x_pitch)+top_thumb_key_y_offset, two_D?0:key_travel_distance])
 			 rotate([x_pitch, 0, 0])
 			 keyframe(cutout_only=cutout_only); //For top thumb key
 	       }
 	  }
-	  translate([keysize*(1+sin(thumb_yaw))+mx_frame_to_plunger_top*sin(-thumb_roll),
+	  translate([keysize*(1+sin(thumb_yaw))+mx_frame_to_plunger_top*sin(-thumb_roll)+thumb_pinch_key_x_hack,
 		     -keysize/2
 		     //-key_y_spacing //Unneeded
                      //-mx_frame_to_pin*sin(x_pitch) //Unneeded
-		     -thumb_pinch_key_hack,
+		     -thumb_pinch_key_y_hack,
 		     keysize*sin(-thumb_roll)+keysize*sin(x_pitch)]) { //For thumb pinch key
 	       rotate([-x_pitch, thumb_roll, 0]) {
 		    if(render_thumb_pinch_key) keyframe(cutout_only=cutout_only);
