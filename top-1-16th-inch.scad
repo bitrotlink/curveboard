@@ -2,12 +2,12 @@ include <flatboard-lib.scad>;
 
 module plate_trim_palms() {
   for(i=[0,1]) {
-    translate([0*hand_spacing*(i==0?1:-1), -200, 0])
+    translate([0*hand_spacing*(i==0?1:-1), -210, 0])
     mirror([i, 0, 0])
     rotate([0, 0, kbd_half_yaw]) {
          square([200,90]);
     }
-    translate([2*hand_spacing*(i==0?1:-1), -200, 0])
+    translate([2*hand_spacing*(i==0?1:-1)*1.15, -195, 0])
     mirror([i, 0, 0])
     rotate([0, 0, kbd_half_yaw]) {
          square([200,145]);
@@ -17,8 +17,8 @@ module plate_trim_palms() {
 
 difference() {
   plate();
+  mounts();
   cutouts();
-  center_mounts();
   plate_trim_palms();
 }
 

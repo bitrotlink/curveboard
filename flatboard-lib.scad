@@ -7,19 +7,17 @@ two_D = true;
 omissions = 2;
 render_kbd_tent_and_yaw = false;
 render_kbd_pitch = false;
-display_keyswitches = false;
+display_keyswitches = true;
 accurate_holepunch = false;
 avoid_steep_overhang = false;
-thumb_pinch_key = true;
 parallel_thumb_key_qnty = 2;
 render_kbd_frame = false;
 render_index_finger_tertiary_key = false;
 raise_secondary_thumb_keys = false;
-y_translation = [-keysize/4, -keysize/4, 0, 0, -keysize/2, -keysize/2];
 diode_pinholes = true;
 cutout_only_global = true;
-hand_spacing= 65;
-upper_center_key_offset = -17;
+hand_spacing= 62;
+upper_center_key_offset = -12;
 lower_center_key_offset = -90;
 thumb_pinch_key_x_hack = 0;
 column_palm_length = 210;
@@ -32,6 +30,7 @@ mount_hole_diameter = 4;
 header_pin_spacing = 2.54;
 header_pin_size = 0.635; //Standard header pin. Should be 0.635*0.85 for tight fit, but laser cutter at Fuse can't make reliable hole that small in 1/8" plywood.
 arduino_mount_hole_size = 2.5*0.85;
+minkowski_radius = 0;
 
 module center_key(cutout_only=false) {
   translate([0, 0, -common_frame_thickness/2]) //For flat keyboard, put top surface of keyframe at z=0; to match what happens in key_column() (in keywell())
@@ -41,44 +40,54 @@ module center_key(cutout_only=false) {
 
 module plate_1() {
      translate([0, column_palm_offset]) {
-       square([column_palm_width,column_palm_length], center=true);
-       translate([-column_palm_width/2,-column_palm_length/2])
-         rotate([0, 0, -kbd_half_yaw])
-         translate([-50,0])
-         square([50,150]);
+       translate([-1*column_palm_width, -1/2*column_palm_length+minkowski_radius])
+         square([3/2*column_palm_width - minkowski_radius, column_palm_length - minkowski_radius*2]);
      }
  }
 
 module plate_trim_1() {
          rotate([0, 0, -kbd_half_yaw*2])
-         translate([0,60])
+         translate([-10,70])
          square([50,50]);
 }
 
 module plate_trim_2() {
-         rotate([0, 0, -kbd_half_yaw*2])
-         translate([130,-150])
-         square([50,100]);
+         rotate([0, 0, -kbd_half_yaw])
+         translate([115,-140])
+         square([50,50]);
+}
+
+module plate_trim_3() {
+         translate([-150, 57])
+         square([300,25]);
+         translate([-150, -225])
+         square([300,50+minkowski_radius]);
+}
+
+module center_mounts() {
+    translate([0, 30])
+      circle(r=mount_hole_diameter/2);
+    translate([0, -65])
+      circle(r=mount_hole_diameter/2);
 }
 
 module mounts() {
-    translate([64, -136])
+  for(i=[0,1])
+  translate([hand_spacing*(i==0?1:-1), 0, 0])
+  mirror([i, 0, 0])
+  rotate([0, 0, kbd_half_yaw]) {
+    translate([64, -130])
       circle(r=mount_hole_diameter/2);
     translate([-70, -153])
       circle(r=mount_hole_diameter/2);
     translate([64, 26])
       circle(r=mount_hole_diameter/2);
-    translate([15, -55])
+    translate([0, -55])
       circle(r=mount_hole_diameter/2);
     translate([64, -55])
       circle(r=mount_hole_diameter/2);
-}
-
-module center_mounts() {
-    translate([0, 25])
-      circle(r=mount_hole_diameter/2);
-    translate([0, -60])
-      circle(r=mount_hole_diameter/2);
+  }
+  center_mounts();
 }
 
 module header_pins() {
@@ -108,7 +117,7 @@ module arduino_mounts() {
 }
 
 
-module plate() {
+module plate_2() {
     for(i=[0,1])
     translate([hand_spacing*(i==0?1:-1), 0, 0])
     mirror([i, 0, 0])
@@ -117,9 +126,27 @@ module plate() {
            plate_1();
            plate_trim_1();
            plate_trim_2();
-           mounts();
            }
       }
+     translate([0, 30])
+        square([200, 25], center=true);
+}
+
+module plate() {
+       difference() {
+           plate_2();
+           plate_trim_3();
+       }
+}
+
+module plate_uncut_with_minkowski() {
+    minkowski() {
+       difference() {
+           plate_2();
+           plate_trim_3();
+       }
+       circle(r=minkowski_radius);        
+    }
 }
 
 module cutouts() {

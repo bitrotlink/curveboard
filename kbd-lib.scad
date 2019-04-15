@@ -86,7 +86,7 @@ draft_angle = 4; //For injection molding
 keycap_spacing = 0; //Gap between keycaps, to keep them from touching
 key_y_spacing = mx_frame_to_plunger_top*tan(x_pitch)+keycap_spacing; //Prevent keys from being so close together that keycaps interfere with each other
 
-kbd_half_yaw = 15; //Finger column yaw angle. Total angle between the two keyboard halves is twice this.
+kbd_half_yaw = 22.5; //Finger column yaw angle. Total angle between the two keyboard halves is twice this.
 kbd_tent = curved?15:0;
 kbd_pitch = curved?5:0;
 palm_pitch= curved?15:0;
@@ -94,17 +94,17 @@ pitch_palmrest_with_keywell = false; //When pitching keywell, true if palmrest p
 thumb_top_x_offset = -0.5*keysize; //x-offset of right-hand thumb key that's higher along y-axis than thumb's home key
 thumb_pitch = 0;
 thumb_roll = curved?-kbd_tent:0;
-thumb_yaw = 12;
+thumb_yaw = 0;
 
 thumbplate_z_offset = z_height(index_finger_home_column);
-parallel_thumb_key_qnty = 3; //Number of parallel double-length thumb keys
+parallel_thumb_key_qnty = 2; //Number of parallel double-length thumb keys
 render_thumb_pinch_key = true; //Whether to create thumb pinch key
-thumb_pinch_key_y_hack = 3; //Hack to avoid interference from main keywell for thumb pinch key when using extended frame for 3D printing. Also when using 3/2 length keycap (oriented along y axis) instead of square keycap.
+thumb_pinch_key_y_hack = 5; //Hack to avoid interference from main keywell for thumb pinch key when using extended frame for 3D printing. Also when using 3/2 length keycap (oriented along y axis) instead of square keycap.
 thumb_pinch_key_x_hack = 0;
 thumb_x_hack = 2; //Hack to eliminate a little superfluous x-axis spacing of thumb plate, because I'm tired of doing the trig
 first_secondary_thumb_key = 2; //Number of first thumb key that counts as secondary (space key is zero)
 match_roll_secondary_thumb_keys = true; //Option to roll secondaries the same as primaries
-add_yaw_secondary_thumb_keys = 3; //Additional yaw for each thumb key relative to the previous one
+add_yaw_secondary_thumb_keys = 10; //Additional yaw for each thumb key relative to the previous one
 raise_secondary_thumb_keys = true; //Raise secondary thumb keys above z-height of thumb plane
 top_thumb_key_y_offset = 5; //Clearance to use 3/2 length keycap (oriented along y axis of thumb plate) instead of square keycap.
 
@@ -176,7 +176,7 @@ module right_iso_triangle (base, thickness) {
      }
 }
 
-module keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, keyhole_y, mx_latches, two_D=false) { //Subtracted from start frame to produce hole. mx_latches is option to provide clearance for top-housing latches, so top housing can be removed without removing entire keyswitch from the frame. two_D, if true, is option to produce only the hole for the keyswitch, without the larger hole under it to create lip for keyswitch housing latches to catch on; this is useful only for 2D laser cuts in material with thickness keyswitch_frame_thickness.
+module keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, keyhole_y, mx_latches, two_D=false, length_ext=0) { //Subtracted from start frame to produce hole. mx_latches is option to provide clearance for top-housing latches, so top housing can be removed without removing entire keyswitch from the frame. two_D, if true, is option to produce only the hole for the keyswitch, without the larger hole under it to create lip for keyswitch housing latches to catch on; this is useful only for 2D laser cuts in material with thickness keyswitch_frame_thickness.
      translate([0, 0, keyswitch_frame_thickness+((avoid_interfering_supports||enable_injection_moldability)?(keyswitch_x-keyhole_x)/2:0)])
 	  if(two_D==false) cube([keyswitch_x, keyswitch_y, (common_frame_thickness+(mx_frame_to_pin-(keyswitch_x-keyhole_x)/2)-keyswitch_frame_thickness)+BS]); //Restrict frame thickness to keyswitch spec in area of keyswitch, so keyswitch can latch into place using frame latches on bottom of housing when inserted into hole. (This is unrelated to the top-housing latches that mx_latch_offset, mx_latch_width, and mx_latches provide clearance for.)
      translate([(keyswitch_x-keyhole_x)/2, (keyswitch_y-keyhole_y)/2, -BS]) {
@@ -201,7 +201,9 @@ module keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, k
 		    cube([keyhole_x, keyhole_y, mx_frame_to_pin+mx_frame_thickness]);
 	       cube([keyswitch_x, keyswitch_y, mx_frame_to_housing_top]);
 	       translate([keyswitch_x/2, keyswitch_y/2, mx_frame_to_housing_top])
-		    rotate(45) cylinder(h=mx_frame_to_plunger_top-mx_frame_to_housing_top,
+          for(i=[0, -length_ext*keysize/2, length_ext*keysize/2])
+              translate([0, i, 0])
+          rotate(45) cylinder(h=mx_frame_to_plunger_top-mx_frame_to_housing_top,
 					r1=keyswitch_x/sqrt(2),
 					r2=DSA_cap_top_width/sqrt(2),
 					$fn=4);
@@ -271,11 +273,11 @@ module keyframe_skirt_right_corner(y_pos, z_pos, ysize=1) { //Fully within keyfr
 	  rotate([90, 0, 0]) cylinder(h=nominal_thickness, r=skirt_cylinder_radius+BS, center=true);
 }
 
-module keyframe(skirt_type=0, skirt_only=false, cutout=true, cutout_only=false, ysize=1) { //See keyframe_skirt for skirt_type values. skirt_only: produce only skirt, not the frame segment. cutout: true for frame cutout for keyswitch, false for blank frame segment (no cutout). cutout_only: false for standard keyframe, true for only the hole (to subtract from something else). ysize: keycap y-height relative to standard (keysize).
+module keyframe(skirt_type=0, skirt_only=false, cutout=true, cutout_only=false, ysize=1, length_ext=0) { //See keyframe_skirt for skirt_type values. skirt_only: produce only skirt, not the frame segment. cutout: true for frame cutout for keyswitch, false for blank frame segment (no cutout). cutout_only: false for standard keyframe, true for only the hole (to subtract from something else). ysize: keycap y-height relative to standard (keysize).
      if(cutout_only==true) {
 	  rotate([0, 180, 0]) //Keyhole is upside down for ease of 3D printing; flip it right-side up here.
 	       translate([-keyswitch_x/2, -keyswitch_y/2, -common_frame_thickness/2])
-	       keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, keyhole_y, mx_latches, two_D=two_D&&!curved);
+	       keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, keyhole_y, mx_latches, two_D=two_D&&!curved, length_ext=length_ext);
      }
      else {
 	  if(skirt_only==false) {
@@ -288,7 +290,7 @@ module keyframe(skirt_type=0, skirt_only=false, cutout=true, cutout_only=false, 
 			 }
 			 rotate([0, 180, 0]) //Keyhole is upside down for ease of 3D printing; flip it right-side up here.
 			      translate([-keyswitch_x/2, -keyswitch_y/2, -common_frame_thickness/2])
-			      keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, keyhole_y, mx_latches);
+			      keyhole(keyswitch_frame_thickness, keyswitch_x, keyswitch_y, keyhole_x, keyhole_y, mx_latches, length_ext=length_ext);
 		    }
 	       else cube([keysize+BS, keysize*ysize+BS, common_frame_thickness], center=true);
 	  }
@@ -430,17 +432,17 @@ module thumbplate(cutout_only=false) {
 	  rotate([thumb_pitch, thumb_roll, 0]) {
 	       rotate([0, 0, thumb_yaw]) {
 		    for(x=[0:parallel_thumb_key_qnty-1]) {
-			 translate([-x*keysize-(keysize*2)*sin(x*add_yaw_secondary_thumb_keys),
-				    -(keysize*2)*sin(x*add_yaw_secondary_thumb_keys),
+			 translate([-x*keysize-(keysize)*sin(x*add_yaw_secondary_thumb_keys),
+				    -(keysize)*sin(x*add_yaw_secondary_thumb_keys),
 				    (raise_secondary_thumb_keys&&x>=first_secondary_thumb_key)?
 				    key_travel_distance*(1+x-first_secondary_thumb_key):0])
 			      rotate([0, (!match_roll_secondary_thumb_keys&&x>=first_secondary_thumb_key) ? -thumb_roll:0,
 					  x*add_yaw_secondary_thumb_keys])
-			      keyframe(cutout_only=cutout_only, ysize=conserve_plastic?1:2); //These are for the three vertical (along y-axis) double-length thumb keys
+			      keyframe(cutout_only=cutout_only, ysize=conserve_plastic?1:2, length_ext=1); //These are for the three vertical (along y-axis) double-length thumb keys
 		    }
 		    translate([-keysize+keysize*sin(thumb_yaw), keysize*3/2+mx_frame_to_plunger_top*sin(x_pitch)+top_thumb_key_y_offset, two_D?0:key_travel_distance])
 			 rotate([x_pitch, 0, 0])
-			 keyframe(cutout_only=cutout_only); //For top thumb key
+			 keyframe(cutout_only=cutout_only, length_ext=1/2); //For top thumb key
 	       }
 	  }
 	  translate([keysize*(1+sin(thumb_yaw))+mx_frame_to_plunger_top*sin(-thumb_roll)+thumb_pinch_key_x_hack,
@@ -450,8 +452,8 @@ module thumbplate(cutout_only=false) {
 		     -thumb_pinch_key_y_hack,
 		     keysize*sin(-thumb_roll)+keysize*sin(x_pitch)]) { //For thumb pinch key
 	       rotate([-x_pitch, thumb_roll, 0]) {
-		    if(render_thumb_pinch_key) keyframe(cutout_only=cutout_only);
-		    else keyframe(cutout=false);
+		    if(render_thumb_pinch_key) keyframe(cutout_only=cutout_only, length_ext=1/2);
+		    else keyframe(cutout=false, length_ext=1/2);
 	       }
 	  }
      }
@@ -627,9 +629,9 @@ module kbd_frame_walls() {
 	  union() {
 	       y_top_wall_positive();
 	       right_wall();
-	       left_wall_positive();
-	       left_y_top_corner_wall_positive();
-	       left_y_bottom_corner_wall_positive();
+*	       left_wall_positive();
+*	       left_y_top_corner_wall_positive();
+*	       left_y_bottom_corner_wall_positive();
 	  }
 	  kbd_frame_wall_boundaries();
      }

@@ -4,8 +4,8 @@ mx_keyhole_x_y = 16;
 
 difference() {
   plate();
+  mounts();
   cutouts();
-  center_mounts();
   header_pins();
 }
 
