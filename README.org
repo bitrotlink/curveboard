@@ -1,0 +1,31 @@
+#+TITLE: Curveboard
+
+* Curveboard Ergonomic Keyboard Frame
+
+This frame is loosely modeled on the [[https://www.maltron.com/][Maltron]] keyboard designed by [[https://www.nytimes.com/1978/03/15/archives/qwerty-and-beyond.html][Lillian Malt and Stephen Hobday]] in 1978, and thereafter poorly copied by Kinesis.
+
+This frame is written entirely in [[https://openscad.org/][OpenSCAD]]. It's partially parameterized to enable automatic regeneration after adjusting distances and angles defined in variables at the tops of the source files. Also, curvature can optionally be eliminated, producing a flat version suitable for production via a laser cutter. The keyholes will mount MX switches made by Cherry or Gateron.
+
+** Status
+- Curved version :: The keywells are complete and ready to 3D print. The inter-well filler is incomplete.
+- Flat version :: Complete and ready to cut.
+
+** Files
+- kbd-lib.scad :: bulk of the design
+- curveboard.scad :: variables for curved rendering options
+- flatboard-lib.scad :: frame perimeter and filler for flat version
+- bottom-1-4th-inch.scad :: base plate[fn:lsrprnt] for flat version
+- mid-1-8th-inch.scad :: mid plate[fn:lsrprnt] for flat version
+- top-1-16th-inch.scad :: top plate[fn:lsrprnt] for flat version
+
+[fn:lsrprnt] Suitable for laser cutting. The bottom and mid plates should be wood, and the top plate should be acrylic; this produces a sturdy frame and precision fitting for MX keyswitches.
+
+Beware that rendering of even the flat version takes a long time, and the curved version an extremely long time. OpenSCAD is CPU bound and uses a single thread. Also beware that the code is convoluted, mainly due to deficiencies of OpenSCAD as a language.
+
+** History
+
+This project began with a highly customized Maltron keyboard hand-made by the late Stephen Hobday. He did an excellent job fulfilling my spec in both letter and spirit, but when I received the result and tried typing on it, I discovered it was unsatisfactory because my spec was ill-conceived. On top of that, Maltron's electronics and firmware were poor.
+
+So, I ripped out all of the electronics and wiring and tore the keyboard frame to pieces, undoing most of Mr. Hobday's work, and reconstructed it satisfactorily in light of my hands-on experience, then wired in an Arduino Uno and wrote custom firmware that's in the curveboard_firmware repository.
+
+Hand-made keyboards don't scale, so this CAD frame was my eventual solution. I 3D printed the keywells and installed switches and keycaps, and verified that the ergonomics are ideal — better even than the reconstructed Maltron prototype. However, the current state of the curveboard CAD lacks the filler frame material for joining the halves of the keyboard, because while I was working on the design, the Maltron prototype was stolen, and a laser cut-able flat frame was a more expedient way than completing the curved frame's filler material to get a replacement keyboard ASAP. And once I had that, I realized that curvature is nice but not essential, so I set it aside.
