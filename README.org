@@ -14,11 +14,11 @@ This frame is written entirely in [[https://openscad.org/][OpenSCAD]]. It's part
 - kbd-lib.scad :: bulk of the design
 - curveboard.scad :: variables for curved rendering options
 - flatboard-lib.scad :: frame perimeter and filler for flat version
-- bottom-1-4th-inch.scad :: base plate[fn:lsrprnt] for flat version
-- mid-1-8th-inch.scad :: mid plate[fn:lsrprnt] for flat version
-- top-1-16th-inch.scad :: top plate[fn:lsrprnt] for flat version
+- bottom-1-4th-inch.scad :: base plate† for flat version
+- mid-1-8th-inch.scad :: mid plate† for flat version
+- top-1-16th-inch.scad :: top plate† for flat version
 
-[fn:lsrprnt] Suitable for laser cutting. The bottom and mid plates should be wood, and the top plate should be acrylic; this produces a sturdy frame and precision fitting for MX keyswitches.
+† Suitable for laser cutting. The bottom and mid plates should be wood, and the top plate should be acrylic; this produces a sturdy frame and precision fitting for MX keyswitches.
 
 Beware that rendering of even the flat version takes a long time, and the curved version an extremely long time. OpenSCAD is CPU bound and uses a single thread. Also beware that the code is convoluted, mainly due to deficiencies of OpenSCAD as a language.
 
